@@ -5,8 +5,8 @@ import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.core.capsule.TransactionCapsule;
-import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.AccountResourceInsufficientException;
+import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
 import org.tron.core.exception.DupTransactionException;
@@ -27,6 +27,7 @@ public class PendingManager implements AutoCloseable {
     tmpTransactions.addAll(db.getPendingTransactions());
     db.getPendingTransactions().clear();
     db.getDialog().reset();
+    db.getTransactionStoreIdCacheTmp().cleanUp();
   }
 
   @Override

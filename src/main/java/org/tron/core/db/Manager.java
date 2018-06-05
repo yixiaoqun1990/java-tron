@@ -8,6 +8,8 @@ import static org.tron.protos.Protocol.Transaction.Contract.ContractType.Transfe
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javafx.util.Pair;
 import javax.annotation.PostConstruct;
@@ -137,7 +140,26 @@ public class Manager {
 
   @Getter
   private Cache<Sha256Hash, Boolean> transactionIdCache = CacheBuilder
-      .newBuilder().maximumSize(100_000).recordStats().build();
+      .newBuilder().maximumSize(100_000)
+      .recordStats()
+      .build();
+  @Getter
+  private LoadingCache<Sha256Hash, Boolean> transactionStoreIdCache = CacheBuilder.newBuilder()
+      .expireAfterAccess(2, TimeUnit.DAYS).recordStats()
+      .build(new CacheLoader<Sha256Hash, Boolean>() {
+        @Override
+        public Boolean load(Sha256Hash key) {
+          return false;
+        }
+      });
+  @Getter
+  private LoadingCache<Sha256Hash, Boolean> transactionStoreIdCacheTmp = CacheBuilder.newBuilder()
+      .recordStats().build(new CacheLoader<Sha256Hash, Boolean>() {
+        @Override
+        public Boolean load(Sha256Hash key) {
+          return false;
+        }
+      });
 
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
@@ -278,6 +300,12 @@ public class Manager {
 
     validateSignService = Executors
         .newFixedThreadPool(Args.getInstance().getValidateSignThreadNum());
+    //init transactionStoreIdCache
+    this.blockStore.getBlockByLatestNum(65535L).forEach(blockCapsule -> {
+      blockCapsule.getTransactions().forEach(transactionCapsule -> {
+        this.transactionStoreIdCache.put(transactionCapsule.getTransactionId(), true);
+      });
+    });
   }
 
   public BlockId getGenesisBlockId() {
@@ -398,7 +426,8 @@ public class Manager {
     }
 
     if (amount < 0 && balance < -amount) {
-      throw new BalanceInsufficientException(StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
+      throw new BalanceInsufficientException(
+          StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
     }
     account.setBalance(Math.addExact(balance, amount));
     this.getAccountStore().put(account.getAddress().toByteArray(), account);
@@ -414,7 +443,8 @@ public class Manager {
     }
 
     if (amount < 0 && allowance < -amount) {
-      throw new BalanceInsufficientException(StringUtil.createReadableString(accountAddress) + " insufficient balance");
+      throw new BalanceInsufficientException(
+          StringUtil.createReadableString(accountAddress) + " insufficient balance");
     }
     account.setAllowance(allowance + amount);
     this.getAccountStore().put(account.createDbKey(), account);
@@ -467,7 +497,17 @@ public class Manager {
 
   void validateDup(TransactionCapsule transactionCapsule) throws DupTransactionException {
     try {
-      if (getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null) {
+      boolean cacheDup =
+          transactionStoreIdCache.asMap().get(transactionCapsule.getTransactionId()).equals(true)
+              || transactionStoreIdCacheTmp.asMap().get(transactionCapsule.getTransactionId())
+              .equals(true);
+      boolean storeDup =
+          getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null;
+      if (cacheDup != storeDup) {
+        logger.info("storeDup is {},cacheDup is {}.");
+        logger.info("It's all error!!!");
+      }
+      if (storeDup) {
         logger.debug(ByteArray.toHexString(transactionCapsule.getTransactionId().getBytes()));
         throw new DupTransactionException("dup trans");
       }
@@ -563,6 +603,9 @@ public class Manager {
     logger.info("erase block:" + oldHeadBlock);
     khaosDb.pop();
     popedTransactions.addAll(oldHeadBlock.getTransactions());
+    oldHeadBlock.getTransactions().forEach(transactionCapsule -> {
+      transactionStoreIdCache.put(transactionCapsule.getTransactionId(), false);
+    });
   }
 
   private void applyBlock(BlockCapsule block) throws ContractValidateException,
@@ -572,6 +615,7 @@ public class Manager {
     processBlock(block);
     this.blockStore.put(block.getBlockId().getBytes(), block);
     this.blockIndexStore.put(block.getBlockId());
+    transactionStoreIdCache.putAll(transactionStoreIdCacheTmp.asMap());
   }
 
   private void switchFork(BlockCapsule newHead) {
@@ -870,7 +914,6 @@ public class Manager {
     }
 
     validateDup(trxCap);
-
     if (!trxCap.validateSignature()) {
       throw new ValidateSignatureException("trans sig validate failed");
     }
@@ -886,6 +929,7 @@ public class Manager {
       trxCap.setResult(ret);
     }
     transactionStore.put(trxCap.getTransactionId().getBytes(), trxCap);
+    transactionStoreIdCacheTmp.put(trxCap.getTransactionId(), true);
     return true;
   }
 
@@ -932,7 +976,8 @@ public class Manager {
         break;
       }
       // check the block size
-      if ((blockCapsule.getInstance().getSerializedSize() + trx.getSerializedSize() + 3) > ChainConstant.BLOCK_SIZE) {
+      if ((blockCapsule.getInstance().getSerializedSize() + trx.getSerializedSize() + 3)
+          > ChainConstant.BLOCK_SIZE) {
         postponedTrxCount++;
         continue;
       }
