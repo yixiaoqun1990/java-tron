@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javafx.util.Pair;
 import javax.annotation.PostConstruct;
@@ -357,6 +358,7 @@ public class Manager {
    */
   public void initAccount() {
     final Args args = Args.getInstance();
+    this.getDynamicPropertiesStore().saveTotalNetWeight(10_000_000L);
     final GenesisBlock genesisBlockArg = args.getGenesisBlock();
     genesisBlockArg
         .getAssets()
@@ -369,6 +371,7 @@ public class Manager {
                       ByteString.copyFrom(account.getAddress()),
                       account.getAccountType(),
                       account.getBalance());
+              accountCapsule.setFrozen(10_000_000L, 0L);
               this.accountStore.put(account.getAddress(), accountCapsule);
               this.accountIndexStore.put(accountCapsule);
             });
@@ -495,16 +498,27 @@ public class Manager {
     }
   }
 
+  AtomicLong dupCounter = new AtomicLong(0L);
+
   void validateDup(TransactionCapsule transactionCapsule) throws DupTransactionException {
     try {
       boolean cacheDup =
-          transactionStoreIdCache.asMap().get(transactionCapsule.getTransactionId()).equals(true)
-              || transactionStoreIdCacheTmp.asMap().get(transactionCapsule.getTransactionId())
+          transactionStoreIdCache.getUnchecked(transactionCapsule.getTransactionId()).equals(true)
+              || transactionStoreIdCacheTmp.getUnchecked(transactionCapsule.getTransactionId())
               .equals(true);
       boolean storeDup =
           getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null;
       if (cacheDup != storeDup) {
-        logger.info("storeDup is {},cacheDup is {}.");
+        logger.info(
+            "zhangheng storeDup cacheDup:transactionStoreIdCache is {},transactionStoreIdCacheTmp is {}.",
+            transactionStoreIdCache.getUnchecked(transactionCapsule.getTransactionId())
+                .equals(true),
+            transactionStoreIdCacheTmp.getUnchecked(transactionCapsule.getTransactionId())
+                .equals(true));
+        logger.info("zhangheng storeDup is {},cacheDup is {}.count: {}.size:{},{}", storeDup,
+            cacheDup,
+            dupCounter.addAndGet(1), transactionStoreIdCache.size(),
+            transactionStoreIdCacheTmp.size());
         logger.info("It's all error!!!");
       }
       if (storeDup) {
@@ -616,6 +630,12 @@ public class Manager {
     this.blockStore.put(block.getBlockId().getBytes(), block);
     this.blockIndexStore.put(block.getBlockId());
     transactionStoreIdCache.putAll(transactionStoreIdCacheTmp.asMap());
+    logger.info("zhangheng add tmp to cache  start");
+    transactionStoreIdCacheTmp.asMap().forEach((key, val) -> {
+      logger.info("zhangheng add tmp to cache {}", key);
+    });
+    logger.info("zhangheng add tmp to cache  end");
+    transactionStoreIdCacheTmp.asMap().clear();
   }
 
   private void switchFork(BlockCapsule newHead) {
@@ -906,8 +926,8 @@ public class Manager {
     if (trxCap == null) {
       return false;
     }
-    validateTapos(trxCap);
-    validateCommon(trxCap);
+    //validateTapos(trxCap);
+    //validateCommon(trxCap);
 
     if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
       throw new ContractValidateException("act size greater than 1, this is extend feature");
@@ -930,6 +950,7 @@ public class Manager {
     }
     transactionStore.put(trxCap.getTransactionId().getBytes(), trxCap);
     transactionStoreIdCacheTmp.put(trxCap.getTransactionId(), true);
+    logger.info("zhangheng add tmp {}", trxCap.getTransactionId());
     return true;
   }
 
@@ -967,6 +988,7 @@ public class Manager {
         new BlockCapsule(number + 1, preHash, when, witnessCapsule.getAddress());
     dialog.reset();
     dialog.setValue(revokingStore.buildDialog());
+    this.getTransactionStoreIdCacheTmp().asMap().clear();
     Iterator iterator = pendingTransactions.iterator();
     while (iterator.hasNext()) {
       TransactionCapsule trx = (TransactionCapsule) iterator.next();
@@ -1013,7 +1035,7 @@ public class Manager {
     }
 
     dialog.reset();
-
+    dialog.setValue(revokingStore.buildDialog());
     if (postponedTrxCount > 0) {
       logger.info("{} transactions over the block size limit", postponedTrxCount);
     }
