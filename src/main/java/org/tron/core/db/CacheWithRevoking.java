@@ -18,6 +18,9 @@ public class CacheWithRevoking {
     cacheSource = new CacheSource();
   }
 
+  /**
+   * .
+   */
   public void put(byte[] key) {
     if (Objects.isNull(key)) {
       return;
@@ -32,14 +35,14 @@ public class CacheWithRevoking {
   }
 
   /**
-   * This should be called just after an object is created
+   * This should be called just after an object is created.
    */
   private void onCreate(byte[] key) {
     revokingDatabase.onCreate(new RevokingTuple(cacheSource, key), null);
   }
 
   /**
-   * This should be called just before an object is modified
+   * This should be called just before an object is modified.
    */
   private void onModify(byte[] key, byte[] value) {
     revokingDatabase.onModify(new RevokingTuple(cacheSource, key), value);
@@ -58,4 +61,5 @@ public class CacheWithRevoking {
   public boolean has(Sha256Hash transactionId) {
     return cacheSource.has(transactionId);
   }
+
 }

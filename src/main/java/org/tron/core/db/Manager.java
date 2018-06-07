@@ -475,18 +475,8 @@ public class Manager {
   }
 
   void validateDup(TransactionCapsule transactionCapsule) throws DupTransactionException {
-    try {
-      boolean cacheDup = transactionCache.has(transactionCapsule.getTransactionId());
-      boolean storeDup =
-          getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null;
-      if (cacheDup != storeDup) {
-        logger.info("zhangheng cacheDup is {}, storeDup is {}", cacheDup, storeDup);
-      }
-      if (storeDup) {
-        logger.debug(ByteArray.toHexString(transactionCapsule.getTransactionId().getBytes()));
-        throw new DupTransactionException("dup trans");
-      }
-    } catch (BadItemException e) {
+    boolean cacheDup = transactionCache.has(transactionCapsule.getTransactionId());
+    if (cacheDup) {
       logger.debug(ByteArray.toHexString(transactionCapsule.getTransactionId().getBytes()));
       throw new DupTransactionException("dup trans");
     }

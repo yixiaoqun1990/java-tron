@@ -13,7 +13,7 @@ public class CacheSource implements SourceInter<byte[], byte[]> {
 
   @Getter
   private LoadingCache<Sha256Hash, Boolean> transactionStoreIdCache = CacheBuilder.newBuilder()
-      .expireAfterAccess(2, TimeUnit.DAYS).recordStats()
+      .expireAfterAccess(65536 * 3, TimeUnit.SECONDS).recordStats()
       .build(new CacheLoader<Sha256Hash, Boolean>() {
         @Override
         public Boolean load(Sha256Hash key) {
