@@ -22,6 +22,9 @@ public class TransactionStore extends TronStoreWithRevoking<TransactionCapsule> 
     super(dbName);
   }
 
+  @Autowired
+  private CacheWithRevoking transactionCache;
+
   @Override
   public TransactionCapsule get(byte[] key) throws BadItemException {
     byte[] value = dbSource.getData(key);
@@ -41,6 +44,7 @@ public class TransactionStore extends TronStoreWithRevoking<TransactionCapsule> 
     if (Objects.nonNull(indexHelper)) {
       indexHelper.update(item.getInstance());
     }
+    transactionCache.put(item.getInstance().getRawData().toByteArray());
   }
 
   /**

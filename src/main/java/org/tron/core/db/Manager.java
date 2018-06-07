@@ -105,6 +105,8 @@ public class Manager {
   private RecentBlockStore recentBlockStore;
   @Autowired
   private VotesStore votesStore;
+  @Autowired
+  private CacheWithRevoking transactionCache;
 
   // for network
   @Autowired
@@ -398,7 +400,8 @@ public class Manager {
     }
 
     if (amount < 0 && balance < -amount) {
-      throw new BalanceInsufficientException(StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
+      throw new BalanceInsufficientException(
+          StringUtil.createReadableString(account.createDbKey()) + " insufficient balance");
     }
     account.setBalance(Math.addExact(balance, amount));
     this.getAccountStore().put(account.getAddress().toByteArray(), account);
@@ -414,7 +417,8 @@ public class Manager {
     }
 
     if (amount < 0 && allowance < -amount) {
-      throw new BalanceInsufficientException(StringUtil.createReadableString(accountAddress) + " insufficient balance");
+      throw new BalanceInsufficientException(
+          StringUtil.createReadableString(accountAddress) + " insufficient balance");
     }
     account.setAllowance(allowance + amount);
     this.getAccountStore().put(account.createDbKey(), account);
@@ -467,7 +471,13 @@ public class Manager {
 
   void validateDup(TransactionCapsule transactionCapsule) throws DupTransactionException {
     try {
-      if (getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null) {
+      boolean cacheDup = transactionCache.has(transactionCapsule.getTransactionId());
+      boolean storeDup =
+          getTransactionStore().get(transactionCapsule.getTransactionId().getBytes()) != null;
+      if (cacheDup != storeDup) {
+        logger.info("zhangheng cacheDup is {}, storeDup is {}", cacheDup, storeDup);
+      }
+      if (storeDup) {
         logger.debug(ByteArray.toHexString(transactionCapsule.getTransactionId().getBytes()));
         throw new DupTransactionException("dup trans");
       }
@@ -932,7 +942,8 @@ public class Manager {
         break;
       }
       // check the block size
-      if ((blockCapsule.getInstance().getSerializedSize() + trx.getSerializedSize() + 3) > ChainConstant.BLOCK_SIZE) {
+      if ((blockCapsule.getInstance().getSerializedSize() + trx.getSerializedSize() + 3)
+          > ChainConstant.BLOCK_SIZE) {
         postponedTrxCount++;
         continue;
       }
