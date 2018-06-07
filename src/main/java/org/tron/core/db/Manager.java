@@ -257,6 +257,11 @@ public class Manager {
     this.setWitnessController(WitnessController.createInstance(this));
     this.pendingTransactions = Collections.synchronizedList(Lists.newArrayList());
     this.initGenesis();
+    this.blockStore.getBlockByLatestNum(65536L).forEach(blockCapsule -> {
+      blockCapsule.getTransactions().forEach(transactionCapsule -> {
+        this.transactionCache.put(transactionCapsule.getInstance().getRawData().toByteArray());
+      });
+    });
     try {
       this.khaosDb.start(getBlockById(getDynamicPropertiesStore().getLatestBlockHeaderHash()));
     } catch (ItemNotFoundException e) {
