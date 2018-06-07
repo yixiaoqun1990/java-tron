@@ -2,22 +2,20 @@ package org.tron.core.db;
 
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.db.AbstractRevokingStore.RevokingTuple;
 
 @Slf4j
+@Component
 public class CacheWithRevoking {
 
   private CacheSource cacheSource;
   private RevokingDatabase revokingDatabase;
 
-  protected CacheWithRevoking() {
-    this(RevokingStore.getInstance());
-  }
-
-  // only for unit test
-  protected CacheWithRevoking(RevokingDatabase revokingDatabase) {
-    this.revokingDatabase = revokingDatabase;
+  private CacheWithRevoking() {
+    this.revokingDatabase = RevokingStore.getInstance();
+    cacheSource = new CacheSource();
   }
 
   public void put(byte[] key) {

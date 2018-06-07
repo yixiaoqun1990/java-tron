@@ -18,12 +18,12 @@ import org.tron.core.exception.StoreException;
 public class TransactionStore extends TronStoreWithRevoking<TransactionCapsule> {
 
   @Autowired
+  private CacheWithRevoking transactionCache;
+
+  @Autowired
   private TransactionStore(@Value("trans") String dbName) {
     super(dbName);
   }
-
-  @Autowired
-  private CacheWithRevoking transactionCache;
 
   @Override
   public TransactionCapsule get(byte[] key) throws BadItemException {
@@ -40,6 +40,9 @@ public class TransactionStore extends TronStoreWithRevoking<TransactionCapsule> 
 
   @Override
   public void put(byte[] key, TransactionCapsule item) {
+    if (Objects.isNull(key) || Objects.isNull(item)) {
+      return;
+    }
     super.put(key, item);
     if (Objects.nonNull(indexHelper)) {
       indexHelper.update(item.getInstance());
