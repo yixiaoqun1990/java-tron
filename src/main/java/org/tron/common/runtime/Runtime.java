@@ -1,7 +1,11 @@
 package org.tron.common.runtime;
 
+import com.google.protobuf.ByteString;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.Hash;
 import org.tron.common.runtime.config.SystemProperties;
@@ -188,6 +192,14 @@ public class Runtime {
       this.program = new Program(null, code, programInvoke,
           new InternalTransaction(trx), config);
     }
+
+    // transfer from callerAddress to targetAddress according to callValue
+//    byte[] callerAddress = contract.getOwnerAddress().toByteArray();
+//    byte[] callValue = contract.getCallValue().toByteArray();
+//    String hStr = Hex.toHexString(callValue);
+//    long callValueLong = new BigInteger(hStr,16).longValue();
+//    this.deposit.addBalance(callerAddress, - callValueLong);
+//    this.deposit.addBalance(, callValueLong);
   }
 
   /*
@@ -234,6 +246,13 @@ public class Runtime {
     deposit.createAccount(newContractAddress, Protocol.AccountType.Contract);
     deposit.createContract(newContractAddress, new ContractCapsule(trx));
     deposit.saveCode(newContractAddress, ProgramPrecompile.getCode(code));
+//
+//    // transfer from callerAddress to contractAddress according to callValue
+//    byte[] callerAddress = contract.getOwnerAddress().toByteArray();
+//    byte[] callValue = contract.getCallValue().toByteArray();
+//    long callValueLong = new BigInteger(Hex.toHexString(callValue),16).longValue();
+//    this.deposit.addBalance(callerAddress, - callValueLong);
+//    this.deposit.addBalance(newContractAddress, callValueLong);
   }
 
   public void go() {
