@@ -1442,7 +1442,7 @@ public class Manager {
   }
 
   public synchronized void preValidateTransactionSign(BlockCapsule block)
-      throws InterruptedException, ValidateSignatureException {
+      throws ValidateSignatureException {
     logger.info("PreValidate Transaction Sign, size:" + block.getTransactions().size()
         + ",block num:" + block.getNum());
     int transSize = block.getTransactions().size();
@@ -1454,14 +1454,17 @@ public class Manager {
           .submit(new ValidateSignTask(transaction, countDownLatch));
       futures.add(future);
     }
-    countDownLatch.await();
 
-    for (Future<Boolean> future : futures) {
-      try {
+    try {
+      countDownLatch.await();
+      for (Future<Boolean> future : futures) {
         future.get();
-      } catch (ExecutionException e) {
-        throw new ValidateSignatureException(e.getCause().getMessage());
       }
+    } catch (ExecutionException e) {
+      throw new ValidateSignatureException(e.getCause().getMessage());
+    } catch (InterruptedException ie) {
+      logger.error("Validate signature have a interrupted exception", ie);
+      throw new ValidateSignatureException(ie.getCause().getMessage());
     }
   }
 }
