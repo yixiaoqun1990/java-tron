@@ -21,6 +21,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -251,12 +252,12 @@ public class TransactionTraceTest {
       Assert.assertEquals(0, trace.getReceipt().getCpuFee());
       Assert.assertEquals(8790,
           trace.getReceipt().getCpuUsage() * 30 + trace.getReceipt().getCpuFee());
-      Assert.assertEquals(68, trace.getReceipt().getStorageDelta());
+      Assert.assertEquals(0, trace.getReceipt().getStorageDelta());
       Assert.assertEquals(0, trace.getReceipt().getStorageFee());
       accountCapsule = dbManager.getAccountStore().get(accountCapsule.getAddress().toByteArray());
       Assert.assertEquals(1374, accountCapsule.getStorageLimit());
-      Assert.assertEquals(68, accountCapsule.getStorageUsage());
-      Assert.assertEquals(1306, accountCapsule.getStorageLeft());
+      Assert.assertEquals(0, accountCapsule.getStorageUsage());
+      Assert.assertEquals(1374, accountCapsule.getStorageLeft());
       Assert.assertEquals(totalBalance,
           1000_000L + accountCapsule.getBalance() + trace.getReceipt().getStorageFee() + trace
               .getReceipt().getCpuFee());
@@ -271,12 +272,17 @@ public class TransactionTraceTest {
 
   private void deployInit(String trxDeploy2Byte)
       throws InvalidProtocolBufferException {
+
     AccountCapsule accountCapsule = new AccountCapsule(ByteString.copyFrom("owner".getBytes()),
         ByteString.copyFrom(Wallet.decodeFromBase58Check(OwnerAddress)), AccountType.Normal,
         totalBalance);
     dbManager.getAccountStore()
         .put(Wallet.decodeFromBase58Check(OwnerAddress), accountCapsule);
     Transaction transaction = Transaction.parseFrom(ByteArray.fromHexString(trxDeploy2Byte));
+    if (Objects.nonNull(
+        dbManager.getContractStore().get(Wallet.decodeFromBase58Check(trx2ContractAddress)))) {
+      return;
+    }
     TransactionCapsule transactionCapsule = new TransactionCapsule(transaction);
     TransactionTrace trace = new TransactionTrace(transactionCapsule, dbManager);
     DepositImpl deposit = DepositImpl.createRoot(dbManager);
