@@ -168,6 +168,7 @@ public class ReceiptCapsule {
       account.setStorageUsage(account.getStorageUsage() + delta);
     } else {
       long needStorage = delta - account.getStorageLeft();
+      // todo storageMarket.tryBuyStorageBytes( delta) delte so smail then return zero
       this.setStorageFee(storageMarket.tryBuyStorageBytes(needStorage));
       account = storageMarket.buyStorageBytes(account, needStorage);
       account.setStorageUsage(account.getStorageUsage() + delta);
