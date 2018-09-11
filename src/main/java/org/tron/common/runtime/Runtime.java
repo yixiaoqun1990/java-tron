@@ -557,9 +557,9 @@ public class Runtime {
         } else {
           deposit.commit();
         }
+        // logger.error("txid: {}, vm time log: \n{}", trxCap.getTransactionId(),
+        //     program.pairList.toString());
 
-        logger.error("txid: {}, vm time log: \n{}", trxCap.getTransactionId(),
-            program.pairList.toString());
       } else {
         deposit.commit();
       }
@@ -577,6 +577,11 @@ public class Runtime {
       result.setException(e);
       runtimeError = result.getException().getMessage();
       logger.error("runtime error is :{}", result.getException().getMessage());
+      TransactionCapsule trxCap = new TransactionCapsule(trx);
+      if (null != program.pairList) {
+        logger.error("txid: {}, vm time log: \n{}", trxCap.getTransactionId(),
+            program.pairList.toString());
+      }
     } catch (Throwable e) {
       program.spendAllEnergy();
       result = program.getResult();
