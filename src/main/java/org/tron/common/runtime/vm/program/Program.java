@@ -83,10 +83,7 @@ import org.tron.protos.Protocol.SmartContract;
  */
 
 @Slf4j(topic = "Program")
-
 public class Program {
-
-  // private static final Logger logger = LoggerFactory.getLogger("VM");
 
   private static final int MAX_DEPTH = 64;
   //Max size for stack checks
@@ -94,7 +91,7 @@ public class Program {
 
   private BlockCapsule blockCap;
 
-  public  byte[] getRootTransactionId() {
+  public byte[] getRootTransactionId() {
     return rootTransactionId.clone();
   }
 
@@ -110,11 +107,11 @@ public class Program {
     nonce = nonceValue;
   }
 
-  public  Boolean getRootCallConstant() {
+  public Boolean getRootCallConstant() {
     return isRootCallConstant;
   }
 
-  public  void setRootCallConstant(Boolean rootCallConstant) {
+  public void setRootCallConstant(Boolean rootCallConstant) {
     isRootCallConstant = rootCallConstant;
   }
 
@@ -154,13 +151,10 @@ public class Program {
   private byte lastOp;
   private byte previouslyExecutedOp;
   private boolean stopped;
-  private ByteArraySet touchedAccounts = new ByteArraySet();
 
   private ProgramPrecompile programPrecompile;
 
   private final VMConfig config;
-
-  //private byte[] transactionHash;
 
   public Program(byte[] ops, ProgramInvoke programInvoke) {
     this(ops, programInvoke, null);
@@ -181,7 +175,6 @@ public class Program {
     this.invoke = programInvoke;
     this.transaction = transaction;
     this.blockCap = blockCap;
-    //this.codeHash = codeHash;
     this.ops = nullToEmpty(ops);
 
     traceListener = new ProgramTraceListener(config.vmTrace());
@@ -190,8 +183,6 @@ public class Program {
     this.contractState = setupProgramListener(new ContractState(programInvoke));
     this.trace = new ProgramTrace(config, programInvoke);
     this.nonce = transaction.getNonce();
-
-    //this.transactionHash = transaction.getHash();
   }
 
   public ProgramPrecompile getProgramPrecompile() {
@@ -212,9 +203,6 @@ public class Program {
     // todo: now, internal transaction needn't energylimit
     InternalTransaction result = null;
     if (transaction != null) {
-      //data = config.recordInternalTransactionsData() ? data : null;
-      //result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(),
-      //        getEnergyPrice(), energyLimit, senderAddress, receiveAddress, value.toByteArray(), data, note);
       result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(),
           senderAddress, receiveAddress, value, data, note, nonce);
     }
@@ -472,29 +460,11 @@ public class Program {
           Hex.toHexString(senderAddress));
     }
 
-    // [2] CREATE THE CONTRACT ADDRESS
-    // byte[] newAddress = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes() nonce);
-    // todo: modify this contract generate way
-
-//    byte[] privKey = Sha256Hash.hash(getOwnerAddress().getData());
-//    ECKey ecKey = ECKey.fromPrivate(privKey);
-
-    //this.transactionHash = Sha256Hash.hash(transactionHash);
     byte[] newAddress = Wallet
         .generateContractAddress(rootTransactionId, nonce);
 
     AccountCapsule existingAddr = getContractState().getAccount(newAddress);
-    //boolean contractAlreadyExists = existingAddr != null && existingAddr.isContractExist(blockchainConfig);
     boolean contractAlreadyExists = existingAddr != null;
-
-        /*
-        if (byTestingSuite()) {
-            // This keeps track of the contracts created for a test
-            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
-                    energyLimit.getNoLeadZeroesData(),
-                    value.getNoLeadZeroesData());
-        }
-        */
 
     Deposit deposit = getContractState().newDepositChild();
 
@@ -521,7 +491,6 @@ public class Program {
       newBalance = deposit.addBalance(newAddress, endowment);
     }
 
-    // BlockchainConfig blockchainConfig = config.getBlockchainConfig().getConfigForBlock(getNumber().longValueExact());
     // actual energy subtract
     DataWord energyLimit = this.getCreateEnergy(getEnergyLimitLeft());
     spendEnergy(energyLimit.longValue(), "internal call");
@@ -591,7 +560,6 @@ public class Program {
       internalTx.reject();
       result.rejectInternalTransactions();
 
-      // deposit.rollback();
       stackPushZero();
 
       if (result.getException() != null) {
@@ -695,7 +663,7 @@ public class Program {
     // CREATE CALL INTERNAL TRANSACTION
     increaseNonce();
     InternalTransaction internalTx = addInternalTx(null, senderAddress, contextAddress,
-        endowment, data, "call" , nonce);
+        endowment, data, "call", nonce);
 
     ProgramResult result = null;
     if (isNotEmpty(programCode)) {
@@ -786,11 +754,11 @@ public class Program {
     }
   }
 
-  public  void increaseNonce() {
+  public void increaseNonce() {
     nonce++;
   }
 
-  public  void resetNonce() {
+  public void resetNonce() {
     nonce = 0;
   }
 
@@ -863,11 +831,6 @@ public class Program {
   }
 
   public DataWord getBlockHash(int index) {
-        /*
-        return index < this.getNumber().longValue() && index >= Math.max(256, this.getNumber().intValue()) - 256 ?
-                new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone() :
-                DataWord.ZERO.clone();
-        */
     if (index < this.getNumber().longValue()
         && index >= Math.max(256, this.getNumber().longValue()) - 256) {
 
@@ -990,7 +953,6 @@ public class Program {
   }
 
   public void fullTrace() {
-
     if (logger.isTraceEnabled() || listener != null) {
 
       StringBuilder stackData = new StringBuilder();
@@ -1565,14 +1527,6 @@ public class Program {
   }
 
   public DataWord getCallEnergy(OpCode op, DataWord requestedEnergy, DataWord availableEnergy) {
-
-    // if (requestedEnergy.compareTo(availableEnergy) > 0) {
-    //   throw new Program.OutOfEnergyException(
-    //       "Not enough energy for '%s' operation executing: opEnergy[%d], programEnergy[%d]", op.name(),
-    //       requestedEnergy, availableEnergy);
-    // }
-    //
-    // return requestedEnergy.clone();
     return requestedEnergy.compareTo(availableEnergy) > 0 ? availableEnergy : requestedEnergy;
   }
 
