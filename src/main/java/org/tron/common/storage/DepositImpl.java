@@ -319,10 +319,10 @@ public class DepositImpl implements Deposit {
     Key addressKey = Key.create(address);
     Storage storage;
     if (storageCache.containsKey(addressKey)) {
-      logger.error("putStorageValue: in storageCache, hit storage");
+      // logger.error("putStorageValue: in storageCache, hit storage");
       storage = storageCache.get(addressKey);
     } else {
-      logger.error("putStorageValue: in storageCache, not hit storage");
+      // logger.error("putStorageValue: in storageCache, not hit storage");
       storage = getStorage(address);
       storageCache.put(addressKey, storage);
     }
@@ -338,10 +338,10 @@ public class DepositImpl implements Deposit {
     Key addressKey = Key.create(address);
     Storage storage;
     if (storageCache.containsKey(addressKey)) {
-      logger.error("getStorageValue: in storageCache, hit storage");
+      // logger.error("getStorageValue: in storageCache, hit storage");
       storage = storageCache.get(addressKey);
     } else {
-      logger.error("getStorageValue: in storageCache, not hit storage");
+      // logger.error("getStorageValue: in storageCache, not hit storage");
       storage = getStorage(address);
       storageCache.put(addressKey, storage);
     }
