@@ -5,6 +5,8 @@ import static org.tron.common.runtime.utils.MUtil.convertToTronAddress;
 import static org.tron.common.runtime.vm.OpCode.CALL;
 import static org.tron.common.runtime.vm.OpCode.PUSH1;
 import static org.tron.common.runtime.vm.OpCode.REVERT;
+import static org.tron.common.runtime.vm.OpCode.SLOAD;
+import static org.tron.common.runtime.vm.OpCode.SSTORE;
 import static org.tron.common.utils.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import java.math.BigInteger;
@@ -1266,19 +1268,14 @@ public class VM {
       }
 
       program.setPreviouslyExecutedOp(op.val());
-      // program.
       long curTime = System.nanoTime() / 1000;
-      program.pairList
-          .add(new java.util.AbstractMap.SimpleEntry<String, Long>(op.name(),
-              (curTime - program.getPreviousTime())));
+
+      if (op == SSTORE || op == SLOAD) {
+        program.pairList
+            .add(new java.util.AbstractMap.SimpleEntry<String, Long>(op.name(),
+                (curTime - program.getPreviousTime())));
+      }
       program.setPreviousTime(curTime);
-            /*
-            if (logger.isInfoEnabled() && !op.isCall())
-                logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
-                        String.format("%-12s",
-                                op.name()), program.getDroplimit().value(),
-                        program.getCallDeep(), hint);
-            */
     } catch (RuntimeException e) {
       logger.warn("VM halted: [{}]", e.getMessage());
       program.spendAllEnergy();

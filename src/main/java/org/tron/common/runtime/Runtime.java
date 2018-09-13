@@ -528,8 +528,10 @@ public class Runtime {
         } else {
           deposit.commit();
         }
-        // logger.error("txid: {}, vm time log: \n{}", trxCap.getTransactionId(),
-        //     program.pairList.toString());
+        if (null != program.pairList) {
+          logger.error("txid: {}, vm time log: \n{}", trxCap.getTransactionId(),
+              program.pairList.toString());
+        }
 
       } else {
         deposit.commit();
