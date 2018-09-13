@@ -93,8 +93,6 @@ public class TransactionTrace {
   //pre transaction check
   public void init() {
     txStartTimeInMs = System.currentTimeMillis();
-    logger.info("this tx id: {} , start time(in trace init()): {}", trx.getTransactionId(),
-        txStartTimeInMs);
     // switch (trxType) {
     //   case TRX_PRECOMPILED_TYPE:
     //     break;
@@ -127,11 +125,6 @@ public class TransactionTrace {
     /**  VM execute  **/
     runtime.execute();
     runtime.go();
-
-    long curTime = System.currentTimeMillis();
-    logger.info("this tx id: {} , end time(after runtime.go()): {}, total consume time: {}",
-        trx.getTransactionId(),
-        curTime, curTime - txStartTimeInMs);
 
     if (TRX_PRECOMPILED_TYPE != runtime.getTrxType()) {
       if (contractResult.OUT_OF_TIME
@@ -192,23 +185,6 @@ public class TransactionTrace {
         dbManager.getWitnessController().getHeadSlot());
   }
 
-  public boolean checkNeedRetry() {
-    if (!needVM()) {
-      return false;
-    }
-    if (Objects.isNull(trx.getContractRet())) {
-      return true;
-    }
-    if (trx.getContractRet().equals(contractResult.SUCCESS) && receipt.getResult()
-        .equals(contractResult.OUT_OF_TIME)) {
-      logger.info(
-          "this tx resultCode in received block: {}\nthis tx resultCode in self: {}\n then Retry ...",
-          trx.getContractRet(), receipt.getResult());
-      return true;
-    }
-    return false;
-  }
-
   public void check() throws ReceiptCheckErrException {
     if (!needVM()) {
       return;
@@ -217,9 +193,8 @@ public class TransactionTrace {
       throw new ReceiptCheckErrException("null resultCode");
     }
     if (!trx.getContractRet().equals(receipt.getResult())) {
-      logger.info(
-          "this tx resultCode in received block: {}\nthis tx resultCode in self: {}",
-          trx.getContractRet(), receipt.getResult());
+      logger.info("this tx resultCode in received block: {}", trx.getContractRet());
+      logger.info("this tx resultCode in self: {}", receipt.getResult());
       throw new ReceiptCheckErrException("Different resultCode");
     }
   }
