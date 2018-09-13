@@ -964,6 +964,7 @@ public class Manager {
     if (runtime.isCallConstant()) {
       throw new VMIllegalException("cannot call constant method ");
     }
+
     trace.init();
     trace.exec(runtime);
 
