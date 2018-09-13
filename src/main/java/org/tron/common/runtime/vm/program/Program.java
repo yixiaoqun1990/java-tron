@@ -62,7 +62,6 @@ import org.tron.common.runtime.vm.program.listener.ProgramStorageChangeListener;
 import org.tron.common.runtime.vm.trace.ProgramTrace;
 import org.tron.common.runtime.vm.trace.ProgramTraceListener;
 import org.tron.common.storage.Deposit;
-import org.tron.common.utils.ByteArraySet;
 import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.FastByteComparisons;
 import org.tron.common.utils.Utils;

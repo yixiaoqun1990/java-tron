@@ -241,7 +241,8 @@ public class VM {
           energyCost = energyCosts.getLOG_ENERGY()
               + energyCosts.getLOG_TOPIC_ENERGY() * nTopics
               + energyCosts.getLOG_DATA_ENERGY() * stack.get(stack.size() - 2).longValue()
-              + calcMemEnergy(energyCosts, oldMemSize, memNeeded(stack.peek(), stack.get(stack.size() - 2)), 0, op);
+              + calcMemEnergy(energyCosts, oldMemSize,
+              memNeeded(stack.peek(), stack.get(stack.size() - 2)), 0, op);
 
           checkMemorySize(op, memNeeded(stack.peek(), stack.get(stack.size() - 2)));
           break;
