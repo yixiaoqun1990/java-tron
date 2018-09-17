@@ -155,9 +155,9 @@ public class SnapshotManager implements RevokingDatabase {
 
   @Override
   public void shutdown() {
-    System.err.println("******** begin to pop revokingDb ********");
-    System.err.println("******** before revokingDb size:" + size);
-    System.err.println("******** end to pop revokingDb ********");
+    logger.info("******** begin to pop revokingDb ********");
+    logger.info("******** before revokingDb size:" + size);
+    logger.info("******** end to pop revokingDb ********");
   }
 
   public void flush() {
