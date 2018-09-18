@@ -1,42 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 
-<suite name="Stest suite" parallel="tests" thread-count="2" >
+<suite name="Wallet case">
   <listeners>
     <listener class-name="stest.tron.wallet.common.client.utils.RetryListener"/>
   </listeners>
-    <test name="Stest transfer">
-      <packages>
-        <package name="stest.tron.wallet.transfer">
-        </package>
-      </packages>
-    </test>
-  <test name="Stest assetissue,account">
+  <test name="Debug case" preserve-order="true">
     <packages>
-      <package name="stest.tron.wallet.assetissue">
-      </package>
-      <package name="stest.tron.wallet.account">
-      </package>
+                        <package name="stest.tron.wallet.newaddinterface2.*">
+                        </package>
     </packages>
-  </test>
-  <test name="Stest block,node,witness">
-    <packages>
-      <package name="stest.tron.wallet.block">
-      </package>
-      <package name="stest.tron.wallet.node">
-      </package>
-      <package name="stest.tron.wallet.witness">
-      </package>
-    </packages>
-  </test>
-  <test name="Stest contract,exchange,committee">
-    <packages>
-      <package name="stest.tron.wallet.contract">
-      </package>
-      <package name="stest.tron.wallet.exchange">
-      </package>
-      <package name="stest.tron.wallet.committee">
-      </package>
-    </packages>
+<!--    <classes>
+      <class name="stest.tron.wallet.onlineStress.TestMapByteLarge"/>
+    </classes>-->
   </test>
 </suite>
